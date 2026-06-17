@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0a1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="睡眠改善">
+  <title>🌙 睡眠改善アプリ</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    :root{
+      --primary:#818cf8;--primary-dark:#6366f1;--primary-light:#1e1b4b;
+      --bg:#0a0a1a;--card:#13132b;--border:#2a2a5a;
+      --text:#e2e8f0;--muted:#94a3b8;
+      --green:#34d399;--red:#f87171;--yellow:#fbbf24;--orange:#fb923c;
+      --r:14px;--hh:58px;--th:62px;
+    }
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Noto Sans JP',sans-serif;overflow:hidden}
+
+    /* ── Layout ── */
+    #app{display:flex;flex-direction:column;height:100%;max-width:480px;margin:0 auto;position:relative}
+    .header{height:var(--hh);background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative}
+    .header h1{font-size:17px;font-weight:800;background:linear-gradient(135deg,#818cf8,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    #hclock{position:absolute;right:14px;font-size:14px;font-weight:700;color:var(--primary);font-variant-numeric:tabular-nums}
+    .content-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 0}
+    .tab-panel{display:none}.tab-panel.active{display:block}
+    nav.tabs{height:var(--th);background:var(--card);border-top:1px solid var(--border);display:flex;flex-shrink:0}
+    .tb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);font-size:10px;gap:2px;cursor:pointer;transition:color .2s}
+    .tb .ti{font-size:22px;line-height:1}
+    .tb.active{color:var(--primary);font-weight:700}
+
+    /* ── Cards ── */
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:14px}
+    .ct{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:5px}
+    input,select,textarea{width:100%;background:#0d0d22;border:1.5px solid var(--border);color:var(--text);border-radius:10px;padding:10px 12px;font-size:15px;outline:none;-webkit-appearance:none}
+    input:focus,select:focus{border-color:var(--primary)}
+    textarea{resize:none;font-size:14px}
+    input[type=time]{font-size:22px;font-weight:700;text-align:center;color:var(--primary);background:#0d0d22}
+    input[type=range]{background:transparent;border:none;padding:4px 0}
+
+    /* ── Buttons ── */
+    .btn{border:none;border-radius:12px;padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s}
+    .btn:active{opacity:.75}
+    .btn-primary{background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;box-shadow:0 4px 15px rgba(99,102,241,.4)}
+    .btn-danger{background:linear-gradient(135deg,#ef4444,#f87171);color:#fff;box-shadow:0 4px 15px rgba(239,68,68,.4)}
+    .btn-success{background:linear-gradient(135deg,#10b981,#34d399);color:#fff;box-shadow:0 4px 15px rgba(16,185,129,.4)}
+    .btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+    .btn-sm{padding:8px 14px;font-size:13px;border-radius:10px}
+    .row{display:flex;gap:8px}
+    .row .btn{flex:1}
+
+    /* ── Alarm tab ── */
+    .alarm-time-display{font-size:56px;font-weight:900;text-align:center;color:var(--primary);font-variant-numeric:tabular-nums;letter-spacing:-2px;padding:16px 0 8px}
+    .alarm-status{text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px}
+    .alarm-status.on{color:var(--green);font-weight:700}
+    .sound-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:4px}
+    .sound-btn{background:#0d0d22;border:2px solid var(--border);color:var(--muted);border-radius:12px;padding:10px 6px;font-size:12px;cursor:pointer;text-align:center;line-height:1.4}
+    .sound-btn.sel{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+    .challenge-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .ch-btn{background:#0d0d22;border:2px solid var(--border);color:var(--muted);border-radius:12px;padding:10px;font-size:12px;cursor:pointer;text-align:center;line-height:1.5}
+    .ch-btn.sel{border-color:var(--yellow);color:var(--yellow);background:#1a1500}
+    .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+    .toggle-row:last-child{border-bottom:none}
+    .toggle-label{font-size:14px}
+    .toggle{position:relative;width:48px;height:27px;flex-shrink:0}
+    .toggle input{opacity:0;width:0;height:0}
+    .toggle .slider{position:absolute;inset:0;background:#2a2a5a;border-radius:27px;cursor:pointer;transition:.3s}
+    .toggle .slider:before{content:'';position:absolute;width:21px;height:21px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s}
+    .toggle input:checked + .slider{background:var(--primary)}
+    .toggle input:checked + .slider:before{transform:translateX(21px)}
+
+    /* ── Alarm overlay ── */
+    #alarm-overlay{position:fixed;inset:0;background:#000;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+    #alarm-overlay.show{display:flex}
+    .alarm-ov-time{font-size:72px;font-weight:900;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-3px;text-shadow:0 0 40px var(--primary);margin-bottom:8px}
+    .alarm-ov-label{font-size:20px;color:var(--muted);margin-bottom:32px}
+    .alarm-ring{font-size:64px;animation:ring .5s ease-in-out infinite alternate}
+    @keyframes ring{from{transform:rotate(-20deg) scale(1)}to{transform:rotate(20deg) scale(1.1)}}
+    .alarm-ov-snooze-count{font-size:13px;color:var(--orange);margin-bottom:8px;font-weight:700}
+
+    /* Challenge */
+    .challenge-box{background:#13132b;border:2px solid var(--primary);border-radius:16px;padding:20px;width:100%;max-width:340px;margin-bottom:20px}
+    .challenge-title{font-size:13px;color:var(--muted);text-align:center;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+    .challenge-math{font-size:38px;font-weight:900;text-align:center;color:#fff;margin-bottom:16px}
+    .challenge-input{font-size:24px;text-align:center;font-weight:700;letter-spacing:2px}
+    .tap-counter{font-size:60px;font-weight:900;color:var(--primary);text-align:center;margin-bottom:10px}
+    .tap-progress{width:100%;height:8px;background:#1a1a3a;border-radius:4px;overflow:hidden;margin-bottom:16px}
+    .tap-progress-bar{height:100%;background:var(--primary);border-radius:4px;transition:width .15s}
+
+    /* ── Sleep record ── */
+    .score-circle{width:100px;height:100px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 14px;border:4px solid}
+    .score-num{font-size:32px;font-weight:900}
+    .score-label{font-size:11px;color:var(--muted)}
+    .stat-row{display:flex;gap:10px;margin-bottom:10px}
+    .stat-box{flex:1;background:#0d0d22;border-radius:10px;padding:12px;text-align:center}
+    .stat-v{font-size:22px;font-weight:800;color:var(--primary)}
+    .stat-l{font-size:11px;color:var(--muted);margin-top:2px}
+    .entry-li{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+    .entry-li:last-child{border-bottom:none}
+    .del-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:2px 6px}
+    .star-row{display:flex;gap:6px;margin-top:4px}
+    .star{font-size:26px;cursor:pointer;opacity:.3;transition:opacity .15s}
+    .star.on{opacity:1}
+
+    /* ── Tips ── */
+    .tip-card{background:linear-gradient(135deg,#13132b,#1a1040);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px}
+    .tip-icon{font-size:28px;margin-bottom:8px}
+    .tip-title{font-size:15px;font-weight:700;margin-bottom:6px}
+    .tip-body{font-size:13px;color:var(--muted);line-height:1.7}
+    .checklist-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+    .checklist-item:last-child{border-bottom:none}
+    .check-box{width:22px;height:22px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s}
+    .check-box.done{background:var(--green);border-color:var(--green)}
+    .check-text{font-size:14px;flex:1}
+    .check-text.done{color:var(--muted);text-decoration:line-through}
+    .progress-bar-wrap{height:6px;background:#1a1a3a;border-radius:3px;overflow:hidden;margin-top:12px}
+    .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),#c084fc);border-radius:3px;transition:width .4s}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+    .badge-green{background:#064e3b;color:var(--green)}
+    .badge-yellow{background:#451a03;color:var(--yellow)}
+    .badge-red{background:#450a0a;color:var(--red)}
+
+    /* ── AI chat ── */
+    .ai-messages{height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;padding:4px}
+    .msg-ai{background:#1a1a35;border:1px solid var(--border);border-radius:14px 14px 14px 4px;padding:11px 13px;font-size:13px;line-height:1.7;max-width:88%}
+    .msg-user{background:linear-gradient(135deg,#4f46e5,#6366f1);border-radius:14px 14px 4px 14px;padding:11px 13px;font-size:13px;line-height:1.7;align-self:flex-end;max-width:88%}
+    .msg-think{color:var(--muted);font-size:12px;font-style:italic}
+    .ai-input-row{display:flex;gap:8px}
+    .ai-input-row input{flex:1}
+    .ai-send{background:var(--primary-dark);color:#fff;border:none;border-radius:10px;padding:10px 14px;font-size:18px;cursor:pointer;flex-shrink:0}
+    .quick-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+    .qb{background:#13132b;border:1.5px solid var(--border);color:var(--primary);border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:600}
+
+    /* ── Toast ── */
+    #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a35;border:1px solid var(--primary);color:var(--text);border-radius:12px;padding:10px 20px;font-size:14px;z-index:8000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+    #toast.show{opacity:1}
+
+    /* ── Misc ── */
+    canvas{width:100%;display:block}
+    .mt8{margin-top:8px}.mt12{margin-top:12px}.mt16{margin-top:16px}
+    .text-center{text-align:center}
+    .sep{height:1px;background:var(--border);margin:12px 0}
+    ::-webkit-scrollbar{width:4px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+  </style>
+</head>
+<body>
+<div id="app">
+  <header class="header">
+    <h1>🌙 睡眠改善アプリ</h1>
+    <div id="hclock">--:--</div>
+  </header>
+
+  <div class="content-area">
+
+    <!-- ═══════════════ ALARM TAB ═══════════════ -->
+    <div id="panel-alarm" class="tab-panel active">
+      <div class="card">
+        <div class="alarm-time-display" id="alarm-time-disp">06:30</div>
+        <div id="alarm-status-txt" class="alarm-status">アラームOFF</div>
+
+        <div class="mt8">
+          <label>起床時刻</label>
+          <input type="time" id="alarm-time-input" value="06:30" onchange="updateAlarmDisplay()">
+        </div>
+
+        <div class="row mt12">
+          <button class="btn btn-primary" id="alarm-toggle-btn" onclick="toggleAlarm()">🔔 アラームをセット</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ct">⚡ アラーム音（最恐モード選択）</div>
+        <div class="sound-grid">
+          <button class="sound-btn sel" data-sound="beep" onclick="selectSound('beep')">🔊<br>激しいビープ</button>
+          <button class="sound-btn" data-sound="siren" onclick="selectSound('siren')">🚨<br>サイレン</button>
+          <button class="sound-btn" data-sound="harsh" onclick="selectSound('harsh')">😱<br>不協和音</button>
+          <button class="sound-btn" data-sound="military" onclick="selectSound('military')">🎺<br>軍隊ラッパ</button>
+          <button class="sound-btn" data-sound="scratch" onclick="selectSound('scratch')">🦂<br>金属スクラッチ</button>
+          <button class="sound-btn" data-sound="random" onclick="selectSound('random')">🎲<br>ランダム最恐</button>
+        </div>
+        <button class="btn btn-outline btn-sm mt8" onclick="testSound()">▶ テスト再生（3秒）</button>
+      </div>
+
+      <div class="card">
+        <div class="ct">🧩 二度寝防止チャレンジ</div>
+        <div class="challenge-grid">
+          <button class="ch-btn sel" data-ch="math" onclick="selectChallenge('math')">🧮<br>計算問題<br><small>ランダム算数</small></button>
+          <button class="ch-btn" data-ch="type" onclick="selectChallenge('type')">⌨️<br>文字入力<br><small>おはようを入力</small></button>
+          <button class="ch-btn" data-ch="tap" onclick="selectChallenge('tap')">👆<br>連打20回<br><small>10秒以内</small></button>
+          <button class="ch-btn" data-ch="shake" onclick="selectChallenge('shake')">📳<br>スマホ振る<br><small>20回シェイク</small></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ct">⚙️ オプション</div>
+        <div class="toggle-row">
+          <span class="toggle-label">📳 バイブレーション</span>
+          <label class="toggle"><input type="checkbox" id="vib-toggle" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">😤 スヌーズ禁止モード</span>
+          <label class="toggle"><input type="checkbox" id="nosnooze-toggle"><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <span class="toggle-label">📢 繰り返し（5分後再鳴動）</span>
+          <label class="toggle"><input type="checkbox" id="repeat-toggle" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row" style="border-bottom:none">
+          <span class="toggle-label">🔊 音量（最大推奨）</span>
+          <input type="range" id="vol-slider" min="0.1" max="1" step="0.1" value="1" style="width:120px;border:none;padding:0">
+        </div>
+      </div>
+
+      <div class="card" style="background:linear-gradient(135deg,#1a0a2e,#0d0d22);border-color:#4a1a7a">
+        <div class="ct" style="color:#c084fc">⚠️ iPhone で使う場合</div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7">Safariはバックグラウンド音声が制限されます。<br>📱 <strong style="color:var(--text)">このページを開いたまま</strong>スリープしてください。<br>設定 → ディスプレイと明るさ → 自動ロック → <strong style="color:var(--yellow)">「しない」</strong>に設定すると確実です。</p>
+      </div>
+    </div>
+
+    <!-- ═══════════════ RECORD TAB ═══════════════ -->
+    <div id="panel-record" class="tab-panel">
+      <div class="card" id="score-card" style="display:none">
+        <div id="score-circle-el" class="score-circle" style="border-color:var(--primary)">
+          <div class="score-num" id="score-num">--</div>
+          <div class="score-label">睡眠スコア</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-v" id="avg-dur">--</div><div class="stat-l">平均睡眠時間</div></div>
+          <div class="stat-box"><div class="stat-v" id="avg-qual">--</div><div class="stat-l">平均満足度</div></div>
+          <div class="stat-box"><div class="stat-v" id="total-days">--</div><div class="stat-l">記録日数</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ct">📝 睡眠を記録</div>
+        <div class="row">
+          <div style="flex:1"><label>就寝時刻</label><input type="time" id="r-bed"></div>
+          <div style="flex:1"><label>起床時刻</label><input type="time" id="r-wake"></div>
+        </div>
+        <div class="mt12">
+          <label>睡眠の満足度</label>
+          <div class="star-row" id="star-row">
+            <span class="star" data-v="1" onclick="setStar(1)">⭐</span>
+            <span class="star" data-v="2" onclick="setStar(2)">⭐</span>
+            <span class="star" data-v="3" onclick="setStar(3)">⭐</span>
+            <span class="star" data-v="4" onclick="setStar(4)">⭐</span>
+            <span class="star" data-v="5" onclick="setStar(5)">⭐</span>
+          </div>
+        </div>
+        <div class="mt12">
+          <label>メモ（夢・気づき）</label>
+          <textarea id="r-memo" rows="2" placeholder="例：よく眠れた、夢を見た..."></textarea>
+        </div>
+        <button class="btn btn-success mt12" onclick="saveRecord()">💾 記録する</button>
+      </div>
+
+      <div class="card">
+        <div class="ct">📊 睡眠時間グラフ（直近14日）</div>
+        <canvas id="chart-sleep" height="150"></canvas>
+      </div>
+
+      <div class="card">
+        <div class="ct">📋 記録履歴</div>
+        <ul id="record-list" style="list-style:none"></ul>
+      </div>
+    </div>
+
+    <!-- ═══════════════ TIPS TAB ═══════════════ -->
+    <div id="panel-tips" class="tab-panel">
+      <div class="card">
+        <div class="ct">🌙 就寝前ルーティン（今夜のチェック）</div>
+        <div id="checklist"></div>
+        <div class="progress-bar-wrap mt12">
+          <div class="progress-bar-fill" id="checklist-progress" style="width:0%"></div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);text-align:right;margin-top:4px" id="checklist-count">0 / 0 完了</div>
+      </div>
+
+      <div class="card">
+        <div class="ct">☕ カフェイン記録</div>
+        <label>今日の最後のカフェイン摂取時刻</label>
+        <input type="time" id="caffeine-time" onchange="saveCaffeine()">
+        <div id="caffeine-warn" style="margin-top:8px;font-size:13px"></div>
+      </div>
+
+      <div class="tip-card">
+        <div class="tip-icon">🛏️</div>
+        <div class="tip-title">毎日同じ時刻に起きる</div>
+        <div class="tip-body">週末も含めて毎日同じ時刻に起床することが体内時計を整える最重要ポイント。就寝時刻より起床時刻を固定することがカギ。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">📵</div>
+        <div class="tip-title">就寝90分前にスマホをやめる</div>
+        <div class="tip-body">ブルーライトがメラトニン（眠気ホルモン）の分泌を抑制。就寝1.5時間前からスマホを置き、間接照明に切り替えるのが効果的。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🛁</div>
+        <div class="tip-title">就寝90分前に入浴</div>
+        <div class="tip-body">入浴後に体温が下がるタイミングで眠気が高まる。シャワーより湯船（38〜40℃、15分）が効果的。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🌡️</div>
+        <div class="tip-title">寝室の温度は18〜20℃</div>
+        <div class="tip-body">睡眠中は体温が下がる。寝室が暑すぎると深い睡眠が妨げられる。夏はエアコン必須、タイマーより「つけっぱなし」が有効。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🌑</div>
+        <div class="tip-title">完全な暗闇で寝る</div>
+        <div class="tip-body">わずかな光でもメラトニン分泌が低下。遮光カーテン・アイマスクを活用。充電中のLEDランプも隠す。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">⏰</div>
+        <div class="tip-title">アラームは1つだけ</div>
+        <div class="tip-body">複数のアラームやスヌーズは「分割睡眠」を引き起こし疲労感を悪化させる。1回のアラームで即座に起きる習慣が最重要。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🏃</div>
+        <div class="tip-title">運動は就寝3時間前まで</div>
+        <div class="tip-body">運動は睡眠の質を大幅に改善するが、夜の激しい運動は逆効果。朝・昼間の運動が最適。就寝前はストレッチ程度に。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🍷</div>
+        <div class="tip-title">アルコールは睡眠を破壊する</div>
+        <div class="tip-body">アルコールは寝つきを良くするが深い睡眠（ノンレム睡眠）を阻害し、中途覚醒を増やす。就寝3時間前以降は飲まない。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">🧘</div>
+        <div class="tip-title">4-7-8呼吸法</div>
+        <div class="tip-body">①鼻から4秒吸う → ②7秒止める → ③口から8秒吐く。これを4回繰り返す。副交感神経が優位になり眠りやすくなる。</div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon">☀️</div>
+        <div class="tip-title">起床後すぐ太陽光を浴びる</div>
+        <div class="tip-body">起床後15分以内に2500ルクス以上の光（屋外か窓際）を浴びることで体内時計がリセットされ、夜の眠気が強くなる。</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ AI TAB ═══════════════ -->
+    <div id="panel-ai" class="tab-panel">
+      <div class="card">
+        <div class="ct">🤖 AIスリープコーチ</div>
+        <div class="quick-btns">
+          <button class="qb" onclick="sendQ('眠れない原因と対策を教えて')">眠れない</button>
+          <button class="qb" onclick="sendQ('朝すっきり起きる方法は？')">朝が辛い</button>
+          <button class="qb" onclick="sendQ('睡眠時間は何時間が理想？')">理想の時間</button>
+          <button class="qb" onclick="sendQ('昼寝は効果的？時間は？')">昼寝のコツ</button>
+          <button class="qb" onclick="sendQ('ストレスで眠れない時の対策')">ストレスで眠れない</button>
+          <button class="qb" onclick="sendQ('私の睡眠データを分析して')">データ分析</button>
+        </div>
+        <div class="ai-messages" id="ai-msgs"></div>
+        <div class="ai-input-row">
+          <input type="text" id="ai-input" placeholder="睡眠の悩みを相談..." onkeydown="if(event.key==='Enter')sendAI()">
+          <button class="ai-send" onclick="sendAI()">➤</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content-area -->
+
+  <nav class="tabs">
+    <button class="tb active" id="tb-alarm" onclick="switchTab('alarm')"><span class="ti">⏰</span><span>アラーム</span></button>
+    <button class="tb" id="tb-record" onclick="switchTab('record')"><span class="ti">📊</span><span>記録</span></button>
+    <button class="tb" id="tb-tips" onclick="switchTab('tips')"><span class="ti">💡</span><span>改善法</span></button>
+    <button class="tb" id="tb-ai" onclick="switchTab('ai')"><span class="ti">🤖</span><span>AI相談</span></button>
+  </nav>
+</div>
+
+<!-- ═══════════════ ALARM OVERLAY ═══════════════ -->
+<div id="alarm-overlay">
+  <div class="alarm-ring" id="alarm-ring">⏰</div>
+  <div class="alarm-ov-time" id="alarm-ov-time">06:30</div>
+  <div class="alarm-ov-label">起きる時間です！</div>
+  <div class="alarm-ov-snooze-count" id="snooze-count-txt" style="display:none"></div>
+
+  <div class="challenge-box" id="challenge-box">
+    <div class="challenge-title" id="ch-title">チャレンジをクリアして止める</div>
+    <div id="ch-content"></div>
+  </div>
+
+  <div id="snooze-btn-wrap">
+    <button class="btn btn-outline btn-sm" id="snooze-btn" onclick="doSnooze()" style="width:200px;margin-bottom:12px">😴 スヌーズ（5分後）</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════
+const CLAUDE_KEY = ['sk-ant-api03-6pIyX1VmHXgLMZ','1A1IRR4C5yj0vJgUtbhcCS-NK9Y','Rg2RWNglANPd6tG4gFf_fXwnQlC','chUDUTPlcoc4X5KAEA-z40nmgAA'].join('');
+const SKEY = 'sleep_records';
+const CKEY = 'sleep_checklist';
+const CAKEY = 'sleep_caffeine';
+
+// ════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+function load(k){ try{return JSON.parse(localStorage.getItem(k)||'[]')}catch{return []} }
+function loadObj(k){ try{return JSON.parse(localStorage.getItem(k)||'{}')}catch{return {}} }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function todayStr(){ return new Date().toISOString().slice(0,10) }
+function pad(n){ return String(n).padStart(2,'0') }
+function showToast(msg){
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ════════════════════════════════════════════════
+// CLOCK
+// ════════════════════════════════════════════════
+function updateClock(){
+  const now=new Date();
+  $('hclock').textContent=pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  // Check alarm
+  if(_alarmActive && !_alarmFiring){
+    const h=pad(now.getHours()), m=pad(now.getMinutes());
+    const t=h+':'+m;
+    const at=_alarmTime;
+    if(t===at && now.getSeconds()===0){ triggerAlarm(); }
+  }
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ════════════════════════════════════════════════
+// TAB SWITCHING
+// ════════════════════════════════════════════════
+let _activeTab='alarm';
+function switchTab(name){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
+  $('panel-'+name).classList.add('active');
+  $('tb-'+name).classList.add('active');
+  _activeTab=name;
+  document.querySelector('.content-area').scrollTop=0;
+  if(name==='record') renderRecord();
+}
+
+// ════════════════════════════════════════════════
+// ALARM STATE
+// ════════════════════════════════════════════════
+let _alarmActive = false;
+let _alarmFiring = false;
+let _alarmTime = '06:30';
+let _selectedSound = 'beep';
+let _selectedChallenge = 'math';
+let _snoozeCount = 0;
+let _audioCtx = null;
+let _alarmIntervalId = null;
+let _vibIntervalId = null;
+let _tapCount = 0;
+let _tapTarget = 20;
+let _shakeCount = 0;
+let _mathAnswer = 0;
+let _tapTimerId = null;
+
+function updateAlarmDisplay(){
+  const t = $('alarm-time-input').value;
+  _alarmTime = t;
+  $('alarm-time-disp').textContent = t;
+}
+
+function toggleAlarm(){
+  _alarmActive = !_alarmActive;
+  const btn = $('alarm-toggle-btn');
+  const status = $('alarm-status-txt');
+  if(_alarmActive){
+    _alarmTime = $('alarm-time-input').value;
+    btn.textContent = '🔕 アラームをOFF';
+    btn.className = 'btn btn-danger';
+    status.textContent = '🔔 セット済み: ' + _alarmTime;
+    status.className = 'alarm-status on';
+    showToast('⏰ アラームをセットしました: ' + _alarmTime);
+    requestWakeLock();
+  } else {
+    btn.textContent = '🔔 アラームをセット';
+    btn.className = 'btn btn-primary';
+    status.textContent = 'アラームOFF';
+    status.className = 'alarm-status';
+    releaseWakeLock();
+  }
+}
+
+function selectSound(s){
+  _selectedSound = s;
+  document.querySelectorAll('.sound-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('[data-sound="'+s+'"]').classList.add('sel');
+}
+
+function selectChallenge(c){
+  _selectedChallenge = c;
+  document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('sel'));
+  document.querySelector('[data-ch="'+c+'"]').classList.add('sel');
+}
+
+// ════════════════════════════════════════════════
+// WEB AUDIO — ALARM SOUNDS
+// ════════════════════════════════════════════════
+function getVol(){ return parseFloat($('vol-slider').value||1); }
+
+function stopAlarmSound(){
+  if(_audioCtx){ try{_audioCtx.close();}catch(e){} _audioCtx=null; }
+  if(_alarmIntervalId){ clearInterval(_alarmIntervalId); _alarmIntervalId=null; }
+}
+
+function startAlarmSound(type){
+  stopAlarmSound();
+  _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const vol = getVol();
+  const t = type || _selectedSound;
+  const actual = t==='random' ? ['beep','siren','harsh','military','scratch'][Math.floor(Math.random()*5)] : t;
+  switch(actual){
+    case 'beep':    playBeep(vol); break;
+    case 'siren':   playSiren(vol); break;
+    case 'harsh':   playHarsh(vol); break;
+    case 'military':playMilitary(vol); break;
+    case 'scratch': playScratch(vol); break;
+  }
+}
+
+function makeOsc(freq, type, startT, dur, vol){
+  if(!_audioCtx) return;
+  const o = _audioCtx.createOscillator();
+  const g = _audioCtx.createGain();
+  o.connect(g); g.connect(_audioCtx.destination);
+  o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(vol, startT);
+  g.gain.exponentialRampToValueAtTime(0.001, startT+dur);
+  o.start(startT); o.stop(startT+dur);
+}
+
+function playBeep(vol){
+  // Very harsh rapid high-pitched beeping
+  let i=0;
+  function b(){
+    if(!_audioCtx) return;
+    const t=_audioCtx.currentTime;
+    makeOsc(1200,'square',t,0.12,vol);
+    makeOsc(900,'square',t+0.02,0.08,vol*0.6);
+  }
+  b();
+  _alarmIntervalId = setInterval(b, 220);
+}
+
+function playSiren(vol){
+  // Sweeping emergency siren 400→2000Hz
+  function cycle(){
+    if(!_audioCtx) return;
+    const o=_audioCtx.createOscillator();
+    const g=_audioCtx.createGain();
+    o.connect(g); g.connect(_audioCtx.destination);
+    o.type='sawtooth'; g.gain.value=vol*0.8;
+    const t=_audioCtx.currentTime;
+    o.frequency.setValueAtTime(400,t);
+    o.frequency.exponentialRampToValueAtTime(2000,t+0.5);
+    o.frequency.exponentialRampToValueAtTime(400,t+1.0);
+    o.start(t); o.stop(t+1.0);
+  }
+  cycle();
+  _alarmIntervalId = setInterval(cycle, 1050);
+}
+
+function playHarsh(vol){
+  // Most annoying: dissonant cluster
+  function harsh(){
+    if(!_audioCtx) return;
+    const t=_audioCtx.currentTime;
+    [[440,0],[467,0.03],[523,0.06],[587,0.09],[659,0.12]].forEach(([f,d])=>{
+      makeOsc(f,'square',t+d,0.18,vol*0.4);
+    });
+  }
+  harsh();
+  _alarmIntervalId = setInterval(harsh, 350);
+}
+
+function playMilitary(vol){
+  // Military bugle reveille pattern (simplified)
+  const notes=[523,659,784,1047,784,1047,1175,1047,784,1047,1175];
+  let ni=0;
+  function note(){
+    if(!_audioCtx) return;
+    const t=_audioCtx.currentTime;
+    makeOsc(notes[ni%notes.length],'triangle',t,0.22,vol);
+    ni++;
+  }
+  note();
+  _alarmIntervalId = setInterval(note, 250);
+}
+
+function playScratch(vol){
+  // Harsh metallic scratch using noise bursts
+  function scratch(){
+    if(!_audioCtx) return;
+    // White noise burst via buffer
+    const bufLen = _audioCtx.sampleRate * 0.15;
+    const buf = _audioCtx.createBuffer(1, bufLen, _audioCtx.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<bufLen;i++) data[i]=(Math.random()*2-1)*vol;
+    const src = _audioCtx.createBufferSource();
+    const g = _audioCtx.createGain();
+    // Add distortion via biquad
+    const filt = _audioCtx.createBiquadFilter();
+    filt.type='bandpass'; filt.frequency.value=3000; filt.Q.value=0.5;
+    src.buffer=buf; src.connect(filt); filt.connect(g); g.connect(_audioCtx.destination);
+    g.gain.value=vol;
+    src.start(); src.stop(_audioCtx.currentTime+0.15);
+  }
+  scratch();
+  _alarmIntervalId = setInterval(scratch, 200);
+}
+
+function testSound(){
+  startAlarmSound(_selectedSound);
+  setTimeout(()=>stopAlarmSound(), 3000);
+}
+
+// ════════════════════════════════════════════════
+// VIBRATION
+// ════════════════════════════════════════════════
+function startVibration(){
+  if(!$('vib-toggle').checked) return;
+  if(!navigator.vibrate) return;
+  function vib(){ if(_alarmFiring && $('vib-toggle').checked) navigator.vibrate([500,200,500,200,1000,500]); }
+  vib();
+  _vibIntervalId = setInterval(vib, 2500);
+}
+function stopVibration(){
+  if(_vibIntervalId){ clearInterval(_vibIntervalId); _vibIntervalId=null; }
+  if(navigator.vibrate) navigator.vibrate(0);
+}
+
+// ════════════════════════════════════════════════
+// WAKE LOCK
+// ════════════════════════════════════════════════
+let _wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if('wakeLock' in navigator){
+      _wakeLock = await navigator.wakeLock.request('screen');
+    }
+  }catch(e){}
+}
+function releaseWakeLock(){
+  if(_wakeLock){ _wakeLock.release(); _wakeLock=null; }
+}
+
+// ════════════════════════════════════════════════
+// TRIGGER ALARM
+// ════════════════════════════════════════════════
+function triggerAlarm(){
+  _alarmFiring = true;
+  // Show overlay
+  const ov = $('alarm-overlay');
+  ov.classList.add('show');
+  const now = new Date();
+  $('alarm-ov-time').textContent = pad(now.getHours())+':'+pad(now.getMinutes());
+  // Start sound
+  startAlarmSound(_selectedSound);
+  // Start vibration
+  startVibration();
+  // Show snooze button based on settings
+  const noSnooze = $('nosnooze-toggle').checked;
+  $('snooze-btn-wrap').style.display = noSnooze ? 'none' : 'block';
+  // Show snooze count
+  if(_snoozeCount > 0){
+    $('snooze-count-txt').textContent = '😤 スヌーズ ' + _snoozeCount + '回目';
+    $('snooze-count-txt').style.display = 'block';
+  }
+  // Show challenge
+  showChallenge();
+  // Notification
+  showNotification();
+  // Make overlay flash
+  ov.style.background = '#000';
+  let flashCount = 0;
+  const flashInterval = setInterval(()=>{
+    if(!_alarmFiring){ clearInterval(flashInterval); ov.style.background='#000'; return; }
+    ov.style.background = flashCount%2===0 ? '#1a0020' : '#000';
+    flashCount++;
+    if(flashCount > 10) clearInterval(flashInterval);
+  }, 200);
+}
+
+function showNotification(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'granted'){
+    new Notification('⏰ 起きる時間です！', { body: '二度寝防止チャレンジをクリアして止めてください', icon: '' });
+  } else if(Notification.permission !== 'denied'){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted') new Notification('⏰ 起きる時間です！', { body: '二度寝防止チャレンジをクリアしてください' });
+    });
+  }
+}
+
+function dismissAlarm(){
+  _alarmFiring = false;
+  _alarmActive = false;
+  stopAlarmSound();
+  stopVibration();
+  releaseWakeLock();
+  $('alarm-overlay').classList.remove('show');
+  // Reset UI
+  $('alarm-toggle-btn').textContent = '🔔 アラームをセット';
+  $('alarm-toggle-btn').className = 'btn btn-primary';
+  $('alarm-status-txt').textContent = 'アラームOFF';
+  $('alarm-status-txt').className = 'alarm-status';
+  $('snooze-count-txt').style.display = 'none';
+  _snoozeCount = 0;
+  showToast('✅ おはようございます！起床しました！');
+  // Auto log wake time
+  const now=new Date();
+  $('r-wake').value = pad(now.getHours())+':'+pad(now.getMinutes());
+  if(_tapTimerId){ clearTimeout(_tapTimerId); _tapTimerId=null; }
+}
+
+function doSnooze(){
+  stopAlarmSound();
+  stopVibration();
+  $('alarm-overlay').classList.remove('show');
+  _alarmFiring = false;
+  _snoozeCount++;
+  showToast('😴 5分後に再鳴動します... (' + _snoozeCount + '回目)');
+  // Re-trigger in 5 minutes
+  setTimeout(()=>{ if(_alarmActive || _snoozeCount>0) triggerAlarm(); }, 5 * 60 * 1000);
+}
+
+// ════════════════════════════════════════════════
+// CHALLENGES
+// ════════════════════════════════════════════════
+function showChallenge(){
+  const ch = _selectedChallenge;
+  const box = $('ch-content');
+  if(ch==='math') showMathChallenge(box);
+  else if(ch==='type') showTypeChallenge(box);
+  else if(ch==='tap') showTapChallenge(box);
+  else if(ch==='shake') showShakeChallenge(box);
+}
+
+function showMathChallenge(box){
+  // Harder math if snooze count is high
+  const difficulty = Math.min(_snoozeCount + 1, 3);
+  let a,b,op,ans;
+  if(difficulty===1){ a=Math.floor(Math.random()*50)+10; b=Math.floor(Math.random()*50)+10; op='+'; ans=a+b; }
+  else if(difficulty===2){ a=Math.floor(Math.random()*80)+20; b=Math.floor(Math.random()*50)+10; op='−'; ans=a-b; }
+  else { a=Math.floor(Math.random()*12)+3; b=Math.floor(Math.random()*12)+3; op='×'; ans=a*b; }
+  _mathAnswer = ans;
+  $('ch-title').textContent = '🧮 計算問題を解いてアラームを止める';
+  box.innerHTML = `
+    <div class="challenge-math">${a} ${op} ${b} = ?</div>
+    <input class="challenge-input" type="number" id="math-ans" inputmode="numeric" placeholder="答えを入力">
+    <button class="btn btn-primary mt12" onclick="checkMath()">✓ 答える</button>
+  `;
+  setTimeout(()=>{ const el=$('math-ans'); if(el) el.focus(); },300);
+}
+
+function checkMath(){
+  const ans = parseInt($('math-ans').value);
+  if(ans === _mathAnswer){ dismissAlarm(); }
+  else {
+    $('math-ans').value='';
+    $('math-ans').style.borderColor='var(--red)';
+    navigator.vibrate && navigator.vibrate([100,100,100]);
+    setTimeout(()=>{ if($('math-ans')) $('math-ans').style.borderColor=''; },600);
+  }
+}
+
+function showTypeChallenge(box){
+  const words = ['おはようございます','起きました','二度寝しない'];
+  const word = words[_snoozeCount % words.length];
+  $('ch-title').textContent = '⌨️ 下の文字を正確に入力してください';
+  box.innerHTML = `
+    <div class="challenge-math" style="font-size:22px;margin-bottom:12px">${word}</div>
+    <input class="challenge-input" type="text" id="type-ans" placeholder="ここに入力..." autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="btn btn-primary mt12" onclick="checkType('${word}')">✓ 確認</button>
+  `;
+  setTimeout(()=>{ const el=$('type-ans'); if(el) el.focus(); },300);
+}
+
+function checkType(word){
+  const ans = $('type-ans').value;
+  if(ans === word){ dismissAlarm(); }
+  else {
+    $('type-ans').value='';
+    $('type-ans').style.borderColor='var(--red)';
+    setTimeout(()=>{ if($('type-ans')) $('type-ans').style.borderColor=''; },600);
+  }
+}
+
+function showTapChallenge(box){
+  _tapCount = 0;
+  _tapTarget = 20 + _snoozeCount * 5;
+  $('ch-title').textContent = `👆 ボタンを${_tapTarget}回連打してください`;
+  box.innerHTML = `
+    <div class="tap-counter" id="tap-num">0</div>
+    <div class="tap-progress"><div class="tap-progress-bar" id="tap-bar" style="width:0%"></div></div>
+    <button class="btn btn-primary" id="tap-btn" onclick="doTap()" style="font-size:24px;padding:20px">👆 TAP!</button>
+  `;
+  // Time limit
+  _tapTimerId = setTimeout(()=>{
+    if(_alarmFiring && _tapCount < _tapTarget){
+      showToast('⏱ 時間切れ！もう一度！');
+      showTapChallenge(box);
+    }
+  }, 15000);
+}
+
+function doTap(){
+  _tapCount++;
+  const pct = (_tapCount/_tapTarget)*100;
+  $('tap-num').textContent = _tapCount;
+  $('tap-bar').style.width = pct+'%';
+  if(_tapCount >= _tapTarget){
+    if(_tapTimerId){ clearTimeout(_tapTimerId); _tapTimerId=null; }
+    dismissAlarm();
+  }
+}
+
+function showShakeChallenge(box){
+  _shakeCount = 0;
+  const target = 20 + _snoozeCount * 5;
+  $('ch-title').textContent = `📳 スマホを${target}回振ってください`;
+  box.innerHTML = `
+    <div class="tap-counter" id="shake-num">0</div>
+    <div class="tap-progress"><div class="tap-progress-bar" id="shake-bar" style="width:0%"></div></div>
+    <p style="font-size:12px;color:var(--muted);text-align:center">スマホを左右に振ってください</p>
+  `;
+  let lastAcc = null;
+  window._shakeHandler = function(e){
+    if(!_alarmFiring) return;
+    const a = e.accelerationIncludingGravity || e.acceleration;
+    if(!a) return;
+    const magnitude = Math.sqrt((a.x||0)**2+(a.y||0)**2+(a.z||0)**2);
+    if(lastAcc !== null && Math.abs(magnitude-lastAcc)>15){
+      _shakeCount++;
+      const pct=(_shakeCount/target)*100;
+      const el=$('shake-num'); if(el) el.textContent=_shakeCount;
+      const bar=$('shake-bar'); if(bar) bar.style.width=pct+'%';
+      if(_shakeCount>=target){ window.removeEventListener('devicemotion',window._shakeHandler); dismissAlarm(); }
+    }
+    lastAcc=magnitude;
+  };
+  if(typeof DeviceMotionEvent!=='undefined' && typeof DeviceMotionEvent.requestPermission==='function'){
+    DeviceMotionEvent.requestPermission().then(r=>{
+      if(r==='granted') window.addEventListener('devicemotion', window._shakeHandler);
+      else { box.innerHTML+='<p style="color:var(--red);font-size:12px;text-align:center">モーション許可が必要です。計算問題に切り替えます。</p>'; setTimeout(()=>showMathChallenge(box),2000); }
+    });
+  } else {
+    window.addEventListener('devicemotion', window._shakeHandler);
+  }
+}
+
+// ════════════════════════════════════════════════
+// SLEEP RECORDS
+// ════════════════════════════════════════════════
+let _starVal = 3;
+function setStar(v){
+  _starVal = v;
+  document.querySelectorAll('.star').forEach(s => s.classList.toggle('on', parseInt(s.dataset.v) <= v));
+}
+setStar(3);
+
+function calcDuration(bed, wake){
+  if(!bed || !wake) return null;
+  let [bh,bm] = bed.split(':').map(Number);
+  let [wh,wm] = wake.split(':').map(Number);
+  let mins = (wh*60+wm) - (bh*60+bm);
+  if(mins < 0) mins += 24*60;
+  return Math.round(mins/6)/10; // hours with 1 decimal
+}
+
+function saveRecord(){
+  const bed=$('r-bed').value, wake=$('r-wake').value;
+  if(!bed || !wake){ showToast('就寝・起床時刻を入力してください'); return; }
+  const dur = calcDuration(bed, wake);
+  const rec = { id: Date.now(), date: todayStr(), bed, wake, duration: dur, quality: _starVal, memo: $('r-memo').value };
+  const records = load(SKEY);
+  records.push(rec);
+  save(SKEY, records);
+  $('r-bed').value=''; $('r-wake').value=''; $('r-memo').value=''; setStar(3);
+  showToast('💾 記録しました！');
+  renderRecord();
+}
+
+function deleteRecord(id){
+  const records = load(SKEY).filter(r=>r.id!==id);
+  save(SKEY, records);
+  renderRecord();
+}
+
+function calcSleepScore(records){
+  if(!records.length) return 0;
+  const recent = records.slice(-14);
+  // Duration score (7h=100, <5h=20, >9h=80)
+  const avgDur = recent.reduce((s,r)=>s+r.duration,0)/recent.length;
+  let durScore = 0;
+  if(avgDur>=7 && avgDur<=9) durScore=100;
+  else if(avgDur>=6) durScore=75;
+  else if(avgDur>=5) durScore=50;
+  else durScore=25;
+  // Quality score
+  const avgQ = recent.reduce((s,r)=>s+r.quality,0)/recent.length;
+  const qualScore = avgQ/5*100;
+  // Consistency (variation in duration)
+  const durations = recent.map(r=>r.duration);
+  const mean = durations.reduce((a,b)=>a+b,0)/durations.length;
+  const variance = durations.reduce((s,d)=>s+(d-mean)**2,0)/durations.length;
+  const consistScore = Math.max(0, 100 - variance*20);
+  return Math.round(durScore*0.4 + qualScore*0.4 + consistScore*0.2);
+}
+
+function renderRecord(){
+  const records = load(SKEY);
+  // Score card
+  if(records.length){
+    $('score-card').style.display='block';
+    const score = calcSleepScore(records);
+    $('score-num').textContent = score;
+    const col = score>=80?'var(--green)':score>=60?'var(--yellow)':'var(--red)';
+    $('score-circle-el').style.borderColor = col;
+    $('score-num').style.color = col;
+    const recent14 = records.slice(-14);
+    const avgDur=(recent14.reduce((s,r)=>s+r.duration,0)/recent14.length).toFixed(1);
+    const avgQ=(recent14.reduce((s,r)=>s+r.quality,0)/recent14.length).toFixed(1);
+    $('avg-dur').textContent=avgDur+'h';
+    $('avg-qual').textContent='⭐'.repeat(Math.round(avgQ));
+    $('total-days').textContent=records.length+'日';
+  }
+  // Chart
+  drawSleepChart(records);
+  // List
+  const ul=$('record-list'); ul.innerHTML='';
+  records.slice().reverse().slice(0,20).forEach(r=>{
+    const li=document.createElement('li');
+    li.className='entry-li';
+    const scoreColor = r.duration>=7?'var(--green)':r.duration>=6?'var(--yellow)':'var(--red)';
+    li.innerHTML=`
+      <div>
+        <div style="font-weight:700;font-size:14px">${r.date}</div>
+        <div style="font-size:12px;color:var(--muted)">${r.bed}就寝 → ${r.wake}起床 / <span style="color:${scoreColor};font-weight:700">${r.duration}h</span> / ${'⭐'.repeat(r.quality)}</div>
+        ${r.memo?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${r.memo}</div>`:''}
+      </div>
+      <button class="del-btn" onclick="deleteRecord(${r.id})">🗑</button>`;
+    ul.appendChild(li);
+  });
+  if(!records.length) ul.innerHTML='<li style="text-align:center;padding:20px;color:var(--muted)">記録がありません</li>';
+}
+
+function drawSleepChart(records){
+  const canvas=$('chart-sleep');
+  if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=canvas.offsetWidth*dpr;
+  canvas.height=150*dpr;
+  ctx.scale(dpr,dpr);
+  const W=canvas.offsetWidth, H=150;
+  ctx.clearRect(0,0,W,H);
+  const data=records.slice(-14);
+  if(!data.length){ ctx.fillStyle='#94a3b8'; ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.fillText('記録なし',W/2,H/2); return; }
+  const maxH=Math.max(...data.map(r=>r.duration),9);
+  const bw=W/data.length*0.7, gap=W/data.length;
+  data.forEach((r,i)=>{
+    const bh=(r.duration/maxH)*(H-30);
+    const x=i*gap+gap*0.15;
+    const y=H-bh-20;
+    const col=r.duration>=7?'#34d399':r.duration>=6?'#fbbf24':'#f87171';
+    // Gradient bar
+    const grad=ctx.createLinearGradient(0,y,0,H-20);
+    grad.addColorStop(0,col); grad.addColorStop(1,col+'44');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.roundRect?ctx.roundRect(x,y,bw,bh,4):ctx.rect(x,y,bw,bh);
+    ctx.fill();
+    // Label
+    ctx.fillStyle='#94a3b8'; ctx.font=`${Math.min(10,gap*0.4)}px sans-serif`; ctx.textAlign='center';
+    ctx.fillText(r.duration+'h', x+bw/2, y-4);
+    // Date
+    const d=r.date.slice(5); // MM-DD
+    ctx.fillText(d, x+bw/2, H-6);
+  });
+  // 7h line
+  const y7=(H-20)-(7/maxH)*(H-30);
+  ctx.strokeStyle='#6366f188'; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(0,y7); ctx.lineTo(W,y7); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='#6366f1'; ctx.font='10px sans-serif'; ctx.textAlign='left';
+  ctx.fillText('7h理想',2,y7-3);
+}
+
+// ════════════════════════════════════════════════
+// CHECKLIST
+// ════════════════════════════════════════════════
+const CHECKLIST_ITEMS = [
+  '📵 スマホ・PCをやめた（90分前）',
+  '🛁 入浴を済ませた（90分前）',
+  '☕ カフェインを摂っていない（6時間前から）',
+  '🌑 部屋を暗くした',
+  '🌡️ 室温を18〜20℃に調整した',
+  '🍷 アルコールを飲んでいない',
+  '🧘 ストレッチ or 深呼吸をした',
+  '📝 明日のことを書き出した（頭を空にした）',
+  '🎧 ホワイトノイズ or 無音にした',
+  '⏰ アラームをセットした',
+];
+
+function renderChecklist(){
+  const done = loadObj(CKEY)[todayStr()] || [];
+  const el = $('checklist');
+  el.innerHTML = '';
+  CHECKLIST_ITEMS.forEach((item,i)=>{
+    const isDone = done.includes(i);
+    const div = document.createElement('div');
+    div.className='checklist-item';
+    div.onclick=()=>toggleCheck(i);
+    div.innerHTML=`<div class="check-box${isDone?' done':''}">${isDone?'✓':''}</div><div class="check-text${isDone?' done':''}">${item}</div>`;
+    el.appendChild(div);
+  });
+  const pct=Math.round(done.length/CHECKLIST_ITEMS.length*100);
+  $('checklist-progress').style.width=pct+'%';
+  $('checklist-count').textContent=done.length+' / '+CHECKLIST_ITEMS.length+' 完了';
+}
+
+function toggleCheck(i){
+  const today=todayStr();
+  const all=loadObj(CKEY);
+  const done=all[today]||[];
+  const idx=done.indexOf(i);
+  if(idx===-1) done.push(i); else done.splice(idx,1);
+  all[today]=done;
+  save(CKEY,all);
+  renderChecklist();
+}
+
+function saveCaffeine(){
+  const t=$('caffeine-time').value;
+  if(!t) return;
+  const all=loadObj(CAKEY);
+  all[todayStr()]=t;
+  save(CAKEY,all);
+  checkCaffeineWarn(t);
+}
+
+function checkCaffeineWarn(t){
+  if(!t) return;
+  const [h,m]=t.split(':').map(Number);
+  const totalMins=h*60+m;
+  const cutoff=22*60; // 10pm
+  const el=$('caffeine-warn');
+  if(totalMins>14*60){
+    el.innerHTML='<span style="color:var(--red)">⚠️ 午後2時以降のカフェインは睡眠の質を低下させます！</span>';
+  } else {
+    el.innerHTML='<span style="color:var(--green)">✅ 良い！カフェインカットオフ時刻は問題ありません。</span>';
+  }
+}
+
+// Load caffeine from today
+(function(){
+  const all=loadObj(CAKEY);
+  const t=all[todayStr()];
+  if(t){ $('caffeine-time').value=t; checkCaffeineWarn(t); }
+})();
+
+// ════════════════════════════════════════════════
+// AI CHAT
+// ════════════════════════════════════════════════
+let _aiHistory = [];
+
+function getContext(){
+  const records = load(SKEY).slice(-7);
+  if(!records.length) return '';
+  const avgDur=(records.reduce((s,r)=>s+r.duration,0)/records.length).toFixed(1);
+  const avgQ=(records.reduce((s,r)=>s+r.quality,0)/records.length).toFixed(1);
+  return `【ユーザーの睡眠データ（直近7日）】平均睡眠時間:${avgDur}h, 平均満足度:${avgQ}/5\n記録: ${records.map(r=>`${r.date}(${r.duration}h,★${r.quality})`).join(', ')}`;
+}
+
+function addMsg(role, text){
+  const div=document.createElement('div');
+  div.className=role==='ai'?'msg-ai':'msg-user';
+  div.textContent=text;
+  const msgs=$('ai-msgs');
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+async function sendQ(q){ $('ai-input').value=q; await sendAI(); }
+
+async function sendAI(){
+  const input=$('ai-input');
+  const q=input.value.trim();
+  if(!q) return;
+  input.value='';
+  addMsg('user',q);
+  _aiHistory.push({role:'user',content:q});
+
+  const msgs=$('ai-msgs');
+  const thinking=document.createElement('div');
+  thinking.className='msg-think';
+  thinking.textContent='考え中...';
+  msgs.appendChild(thinking);
+  msgs.scrollTop=msgs.scrollHeight;
+
+  const ctx=getContext();
+  const system=`あなたは睡眠専門のAIコーチです。ユーザーの睡眠改善をサポートします。科学的根拠に基づいた、実践的で具体的なアドバイスを日本語で提供してください。医療診断はしません。返答は200文字以内で簡潔に。`;
+  const messages=[];
+  if(ctx){ messages.push({role:'user',content:ctx}); messages.push({role:'assistant',content:'睡眠データを確認しました。'}); }
+  messages.push(..._aiHistory);
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system,messages})
+    });
+    const data=await res.json();
+    thinking.remove();
+    const reply=data.content?.[0]?.text||'エラーが発生しました';
+    addMsg('ai',reply);
+    _aiHistory.push({role:'assistant',content:reply});
+    if(_aiHistory.length>20) _aiHistory=_aiHistory.slice(-20);
+  }catch(e){
+    thinking.remove();
+    addMsg('ai','エラー: '+e.message);
+  }
+}
+
+// Initial AI greeting
+addMsg('ai','こんにちは！😴 睡眠コーチです。眠れない悩み、朝の辛さ、睡眠の質改善など何でも相談してください。快眠に向けてサポートします！');
+
+// ════════════════════════════════════════════════
+// NOTIFICATION PERMISSION
+// ════════════════════════════════════════════════
+if('Notification' in window && Notification.permission==='default'){
+  Notification.requestPermission();
+}
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+renderChecklist();
+renderRecord();
+
+// Set today's dates
+const now=new Date();
+$('r-bed').value='23:00';
+$('r-wake').value=pad(now.getHours())+':'+pad(now.getMinutes());
+
+// Handle resize for chart
+window.addEventListener('resize',()=>{ if(_activeTab==='record') renderRecord(); });
+
+// DEBUG: for testing alarm without waiting (comment out in production)
+// setTimeout(()=>triggerAlarm(), 3000);
+</script>
+</body>
+</html>
