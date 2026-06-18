@@ -500,12 +500,16 @@ function selectSound(s){
   _selectedSound = s;
   document.querySelectorAll('.sound-btn').forEach(b=>b.classList.remove('sel'));
   document.querySelector('[data-sound="'+s+'"]').classList.add('sel');
+  const names = {beep:'🔊 激しいビープ', siren:'🚨 サイレン', harsh:'😱 不協和音', military:'🎺 軍隊ラッパ', scratch:'🦂 金属スクラッチ', random:'🎲 ランダム最恐'};
+  showToast('✅ 音選択: ' + names[s]);
 }
 
 function selectChallenge(c){
   _selectedChallenge = c;
   document.querySelectorAll('.ch-btn').forEach(b=>b.classList.remove('sel'));
   document.querySelector('[data-ch="'+c+'"]').classList.add('sel');
+  const names = {math:'🧮 計算問題', type:'⌨️ 文字入力', tap:'👆 連打20回', shake:'📳 スマホ振る'};
+  showToast('✅ チャレンジ選択: ' + names[c]);
 }
 
 // ════════════════════════════════════════════════
@@ -521,17 +525,19 @@ function stopAlarmSound(){
 function startAlarmSound(type){
   stopAlarmSound();
   _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  _audioCtx.resume(); // iOS Safari requires explicit resume
   const vol = getVol();
   const t = type || _selectedSound;
   const actual = t==='random' ? ['beep','siren','harsh','military','scratch'][Math.floor(Math.random()*5)] : t;
-  switch(actual){
-    case 'beep':    playBeep(vol); break;
-    case 'siren':   playSiren(vol); break;
-    case 'harsh':   playHarsh(vol); break;
-    case 'military':playMilitary(vol); break;
-    case 'scratch': playScratch(vol); break;
-  }
+  // iOS Safari: must resume() first and wait for it before scheduling audio
+  _audioCtx.resume().then(() => {
+    switch(actual){
+      case 'beep':    playBeep(vol); break;
+      case 'siren':   playSiren(vol); break;
+      case 'harsh':   playHarsh(vol); break;
+      case 'military':playMilitary(vol); break;
+      case 'scratch': playScratch(vol); break;
+    }
+  });
 }
 
 function makeOsc(freq, type, startT, dur, vol){
