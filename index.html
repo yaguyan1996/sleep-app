@@ -44,6 +44,8 @@
     /* ── Buttons ── */
     .btn{border:none;border-radius:12px;padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer;width:100%;transition:opacity .15s}
     .btn:active{opacity:.75}
+    button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+    .sound-btn,.ch-btn,.qb{touch-action:manipulation;user-select:none;-webkit-user-select:none}
     .btn-primary{background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;box-shadow:0 4px 15px rgba(99,102,241,.4)}
     .btn-danger{background:linear-gradient(135deg,#ef4444,#f87171);color:#fff;box-shadow:0 4px 15px rgba(239,68,68,.4)}
     .btn-success{background:linear-gradient(135deg,#10b981,#34d399);color:#fff;box-shadow:0 4px 15px rgba(16,185,129,.4)}
@@ -135,7 +137,7 @@
     .qb{background:#13132b;border:1.5px solid var(--border);color:var(--primary);border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-weight:600}
 
     /* ── Toast ── */
-    #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1a1a35;border:1px solid var(--primary);color:var(--text);border-radius:12px;padding:10px 20px;font-size:14px;z-index:8000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+    #toast{position:fixed;bottom:140px;left:50%;transform:translateX(-50%);background:#1a1a35;border:1px solid var(--primary);color:var(--text);border-radius:12px;padding:10px 20px;font-size:14px;z-index:8000;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
     #toast.show{opacity:1}
 
     /* ── Misc ── */
@@ -153,7 +155,7 @@
   <header class="header">
     <h1>🌙 睡眠改善アプリ</h1>
     <div id="hclock">--:--</div>
-    <div style="position:absolute;left:10px;font-size:9px;color:#444">v2.2</div>
+    <div style="position:absolute;left:10px;font-size:9px;color:#444">v2.3</div>
   </header>
 
   <div class="content-area">
@@ -1163,20 +1165,25 @@ if('Notification' in window && Notification.permission==='default'){
 // iOS AUDIO UNLOCK
 // ════════════════════════════════════════════════
 function unlockAudioManually(){
-  if(!_audioCtx || _audioCtx.state==='closed'){
-    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  _audioCtx.resume().then(()=>{
+  // Synchronous visual feedback first (before any async)
+  const btn=$('audio-unlock-btn');
+  if(btn){ btn.textContent='✅ 音が有効化されました'; btn.style.color='var(--green)'; btn.style.borderColor='var(--green)'; }
+  showToast('🔊 音声が有効化されました！');
+  // Create/resume AudioContext
+  try{
+    if(!_audioCtx || _audioCtx.state==='closed'){
+      _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    _audioCtx.resume();
     // Silent buffer to fully unlock iOS
     try{
       const b=_audioCtx.createBuffer(1,1,_audioCtx.sampleRate);
       const s=_audioCtx.createBufferSource();
       s.buffer=b; s.connect(_audioCtx.destination); s.start(0);
     }catch(e){}
-    const btn=$('audio-unlock-btn');
-    if(btn){ btn.textContent='✅ 音が有効化されました'; btn.style.color='var(--green)'; btn.style.borderColor='var(--green)'; }
-    showToast('🔊 音声が有効化されました！');
-  });
+  }catch(e){
+    if(btn){ btn.textContent='❌ エラー: '+e.message; }
+  }
 }
 
 // Auto-unlock on first touch
