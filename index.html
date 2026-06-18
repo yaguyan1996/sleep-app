@@ -521,6 +521,7 @@ function stopAlarmSound(){
 function startAlarmSound(type){
   stopAlarmSound();
   _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  _audioCtx.resume(); // iOS Safari requires explicit resume
   const vol = getVol();
   const t = type || _selectedSound;
   const actual = t==='random' ? ['beep','siren','harsh','military','scratch'][Math.floor(Math.random()*5)] : t;
@@ -1144,6 +1145,16 @@ addMsg('ai','こんにちは！😴 睡眠コーチです。眠れない悩み�
 if('Notification' in window && Notification.permission==='default'){
   Notification.requestPermission();
 }
+
+// ════════════════════════════════════════════════
+// iOS AUDIO UNLOCK
+// ════════════════════════════════════════════════
+// iOS Safari blocks audio until first user gesture
+document.addEventListener('touchstart', function iosAudioUnlock(){
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  ctx.resume().then(() => ctx.close());
+  document.removeEventListener('touchstart', iosAudioUnlock);
+}, { once: true });
 
 // ════════════════════════════════════════════════
 // INIT
