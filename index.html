@@ -153,6 +153,7 @@
   <header class="header">
     <h1>🌙 睡眠改善アプリ</h1>
     <div id="hclock">--:--</div>
+    <div style="position:absolute;left:10px;font-size:9px;color:#444">v2.2</div>
   </header>
 
   <div class="content-area">
@@ -171,6 +172,7 @@
         <div class="row mt12">
           <button class="btn btn-primary" id="alarm-toggle-btn" onclick="toggleAlarm()">🔔 アラームをセット</button>
         </div>
+        <button class="btn btn-outline btn-sm mt8" id="audio-unlock-btn" onclick="unlockAudioManually()" style="color:var(--yellow);border-color:var(--yellow)">🔊 まずここをタップ（音を有効化）</button>
       </div>
 
       <div class="card">
@@ -633,8 +635,12 @@ function playScratch(vol){
 }
 
 function testSound(){
-  startAlarmSound(_selectedSound);
-  setTimeout(()=>stopAlarmSound(), 3000);
+  unlockAudioManually();
+  setTimeout(()=>{
+    startAlarmSound(_selectedSound);
+    showToast('🔊 テスト再生中（3秒）');
+    setTimeout(()=>stopAlarmSound(), 3000);
+  }, 100);
 }
 
 // ════════════════════════════════════════════════
@@ -1156,19 +1162,25 @@ if('Notification' in window && Notification.permission==='default'){
 // ════════════════════════════════════════════════
 // iOS AUDIO UNLOCK
 // ════════════════════════════════════════════════
-// iOS Safari blocks audio until first user gesture
-// Create the persistent AudioContext on first touch and keep it alive
-document.addEventListener('touchstart', function iosAudioUnlock(){
-  if(_audioCtx) return;
-  _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  _audioCtx.resume();
-  // Silent buffer to fully unlock older iOS
-  try{
-    const b=_audioCtx.createBuffer(1,1,_audioCtx.sampleRate);
-    const s=_audioCtx.createBufferSource();
-    s.buffer=b; s.connect(_audioCtx.destination); s.start(0);
-  }catch(e){}
-}, { once: true });
+function unlockAudioManually(){
+  if(!_audioCtx || _audioCtx.state==='closed'){
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  _audioCtx.resume().then(()=>{
+    // Silent buffer to fully unlock iOS
+    try{
+      const b=_audioCtx.createBuffer(1,1,_audioCtx.sampleRate);
+      const s=_audioCtx.createBufferSource();
+      s.buffer=b; s.connect(_audioCtx.destination); s.start(0);
+    }catch(e){}
+    const btn=$('audio-unlock-btn');
+    if(btn){ btn.textContent='✅ 音が有効化されました'; btn.style.color='var(--green)'; btn.style.borderColor='var(--green)'; }
+    showToast('🔊 音声が有効化されました！');
+  });
+}
+
+// Auto-unlock on first touch
+document.addEventListener('touchstart', unlockAudioManually, { once: true });
 
 // ════════════════════════════════════════════════
 // INIT
