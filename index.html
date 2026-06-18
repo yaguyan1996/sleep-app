@@ -155,7 +155,7 @@
   <header class="header">
     <h1>🌙 睡眠改善アプリ</h1>
     <div id="hclock">--:--</div>
-    <div style="position:absolute;left:10px;font-size:9px;color:#444">v2.3</div>
+    <div style="position:absolute;left:10px;font-size:9px;color:#444">v2.4</div>
   </header>
 
   <div class="content-area">
@@ -411,6 +411,28 @@ const CKEY = 'sleep_checklist';
 const CAKEY = 'sleep_caffeine';
 
 // ════════════════════════════════════════════════
+// STATE VARIABLES (declared first to avoid TDZ errors on iOS)
+// ════════════════════════════════════════════════
+let _activeTab = 'alarm';
+let _alarmActive = false;
+let _alarmFiring = false;
+let _alarmTime = '06:30';
+let _selectedSound = 'beep';
+let _selectedChallenge = 'math';
+let _snoozeCount = 0;
+let _audioCtx = null;
+let _alarmIntervalId = null;
+let _vibIntervalId = null;
+let _tapCount = 0;
+let _tapTarget = 20;
+let _shakeCount = 0;
+let _mathAnswer = 0;
+let _tapTimerId = null;
+let _wakeLock = null;
+let _aiHistory = [];
+let _starVal = 3;
+
+// ════════════════════════════════════════════════
 // UTILS
 // ════════════════════════════════════════════════
 const $ = id => document.getElementById(id);
@@ -444,7 +466,6 @@ updateClock();
 // ════════════════════════════════════════════════
 // TAB SWITCHING
 // ════════════════════════════════════════════════
-let _activeTab='alarm';
 function switchTab(name){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('active'));
@@ -458,20 +479,6 @@ function switchTab(name){
 // ════════════════════════════════════════════════
 // ALARM STATE
 // ════════════════════════════════════════════════
-let _alarmActive = false;
-let _alarmFiring = false;
-let _alarmTime = '06:30';
-let _selectedSound = 'beep';
-let _selectedChallenge = 'math';
-let _snoozeCount = 0;
-let _audioCtx = null;
-let _alarmIntervalId = null;
-let _vibIntervalId = null;
-let _tapCount = 0;
-let _tapTarget = 20;
-let _shakeCount = 0;
-let _mathAnswer = 0;
-let _tapTimerId = null;
 
 function updateAlarmDisplay(){
   const t = $('alarm-time-input').value;
@@ -663,7 +670,6 @@ function stopVibration(){
 // ════════════════════════════════════════════════
 // WAKE LOCK
 // ════════════════════════════════════════════════
-let _wakeLock = null;
 async function requestWakeLock(){
   try{
     if('wakeLock' in navigator){
@@ -883,7 +889,6 @@ function showShakeChallenge(box){
 // ════════════════════════════════════════════════
 // SLEEP RECORDS
 // ════════════════════════════════════════════════
-let _starVal = 3;
 function setStar(v){
   _starVal = v;
   document.querySelectorAll('.star').forEach(s => s.classList.toggle('on', parseInt(s.dataset.v) <= v));
@@ -1094,8 +1099,6 @@ function checkCaffeineWarn(t){
 // ════════════════════════════════════════════════
 // AI CHAT
 // ════════════════════════════════════════════════
-let _aiHistory = [];
-
 function getContext(){
   const records = load(SKEY).slice(-7);
   if(!records.length) return '';
