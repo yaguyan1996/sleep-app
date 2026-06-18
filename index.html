@@ -393,7 +393,15 @@
 // ════════════════════════════════════════════════
 // CONSTANTS
 // ════════════════════════════════════════════════
-const CLAUDE_KEY = ['sk-ant-api03-6pIyX1VmHXgLMZ','1A1IRR4C5yj0vJgUtbhcCS-NK9Y','Rg2RWNglANPd6tG4gFf_fXwnQlC','chUDUTPlcoc4X5KAEA-z40nmgAA'].join('');
+const CLAUDE_PROXY = 'https://bvrqpionvrnjjtillhsk.supabase.co/functions/v1/rapid-responder';
+const CLAUDE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ2cnFwaW9udnJuamp0aWxsaHNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MTUxNjEsImV4cCI6MjA5NjQ5MTE2MX0.1vhKaQkmZn8OLFmRN2ZZ0GArzC5g3hTFifac--uZ2L4';
+function claudeFetch(body) {
+  return fetch(CLAUDE_PROXY, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': CLAUDE_ANON, 'Authorization': 'Bearer ' + CLAUDE_ANON },
+    body: JSON.stringify(body)
+  });
+}
 const SKEY = 'sleep_records';
 const CKEY = 'sleep_checklist';
 const CAKEY = 'sleep_caffeine';
@@ -1114,11 +1122,7 @@ async function sendAI(){
   messages.push(..._aiHistory);
 
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true','content-type':'application/json'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system,messages})
-    });
+    const res=await claudeFetch({model:'claude-haiku-4-5-20251001',max_tokens:400,system,messages});
     const data=await res.json();
     thinking.remove();
     const reply=data.content?.[0]?.text||'エラーが発生しました';
