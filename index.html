@@ -518,26 +518,27 @@ function selectChallenge(c){
 function getVol(){ return parseFloat($('vol-slider').value||1); }
 
 function stopAlarmSound(){
-  if(_audioCtx){ try{_audioCtx.close();}catch(e){} _audioCtx=null; }
+  // Don't close _audioCtx — keep it alive for reuse on iOS
   if(_alarmIntervalId){ clearInterval(_alarmIntervalId); _alarmIntervalId=null; }
 }
 
 function startAlarmSound(type){
   stopAlarmSound();
-  _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // Reuse existing context (iOS loses unlock if you create a new one)
+  if(!_audioCtx || _audioCtx.state==='closed'){
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(_audioCtx.state==='suspended') _audioCtx.resume();
   const vol = getVol();
   const t = type || _selectedSound;
   const actual = t==='random' ? ['beep','siren','harsh','military','scratch'][Math.floor(Math.random()*5)] : t;
-  // iOS Safari: must resume() first and wait for it before scheduling audio
-  _audioCtx.resume().then(() => {
-    switch(actual){
-      case 'beep':    playBeep(vol); break;
-      case 'siren':   playSiren(vol); break;
-      case 'harsh':   playHarsh(vol); break;
-      case 'military':playMilitary(vol); break;
-      case 'scratch': playScratch(vol); break;
-    }
-  });
+  switch(actual){
+    case 'beep':    playBeep(vol); break;
+    case 'siren':   playSiren(vol); break;
+    case 'harsh':   playHarsh(vol); break;
+    case 'military':playMilitary(vol); break;
+    case 'scratch': playScratch(vol); break;
+  }
 }
 
 function makeOsc(freq, type, startT, dur, vol){
@@ -1156,10 +1157,17 @@ if('Notification' in window && Notification.permission==='default'){
 // iOS AUDIO UNLOCK
 // ════════════════════════════════════════════════
 // iOS Safari blocks audio until first user gesture
+// Create the persistent AudioContext on first touch and keep it alive
 document.addEventListener('touchstart', function iosAudioUnlock(){
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
-  ctx.resume().then(() => ctx.close());
-  document.removeEventListener('touchstart', iosAudioUnlock);
+  if(_audioCtx) return;
+  _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  _audioCtx.resume();
+  // Silent buffer to fully unlock older iOS
+  try{
+    const b=_audioCtx.createBuffer(1,1,_audioCtx.sampleRate);
+    const s=_audioCtx.createBufferSource();
+    s.buffer=b; s.connect(_audioCtx.destination); s.start(0);
+  }catch(e){}
 }, { once: true });
 
 // ════════════════════════════════════════════════
